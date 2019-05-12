@@ -1,0 +1,75 @@
+version: "2.3"
+
+services:
+  nginx:
+    image: plevenlab.org/wt03-dashboard-nginx:latest
+    container_name: wt03-nginx
+    build:
+      context: containers/nginx
+    ports:
+      - '${NGINX_WEB_PORT}:80'
+      - '${NGINX_WEB_PORT_SSL}:443'
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ./data/nginx/etc/nginx/conf.d
+        target: /etc/nginx/conf.d
+        read_only: true
+      - type: bind
+        source: ${PHP_SOURCE_SOURCE_PATH}
+        target: ${PHP_TARGET_SOURCE_PATH}
+        read_only: true
+      - type: bind
+        source: ./data/nginx/logs
+        target: /var/log/nginx
+    links:
+      - php
+      - db
+    networks:
+      - frontend 
+      - backend
+
+  php:
+    image: plevenlab.org/wt03-dashboard-php-fpm:latest
+    user: ${PHP_UID}:${PHP_GID}
+    build:
+      context: containers/php
+    container_name: wt03-php
+    volumes:
+      - type: bind
+        source: ${PHP_SOURCE_SOURCE_PATH}
+        target: ${PHP_TARGET_SOURCE_PATH}
+    networks:
+      - backend
+
+  setup-env:
+    image: plevenlab.org/wt03-dashboard-setup-env:latest
+    user: ${PHP_UID}:${PHP_GID}
+    build:
+      context: containers/setup-env
+    container_name: wt03-setup-env
+    volumes:
+      - type: bind
+        source: ${PHP_SOURCE_SOURCE_PATH}
+        target: ${PHP_TARGET_SOURCE_PATH}
+    networks:
+      - backend
+      
+  db:
+    container_name: wt03-db
+    restart: always
+    image: mysql:5.7
+    volumes:
+      - ./data/db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:
+

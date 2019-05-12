@@ -1,0 +1,3 @@
+[submodule "data/nginx/www"]
+	path = data/nginx/www
+	url = git@github.com:plevenlab/wt03-dashboard.git

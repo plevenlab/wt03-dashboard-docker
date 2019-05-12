@@ -1,0 +1,48 @@
+# Set master image
+FROM php:7.3.5-fpm-alpine
+
+# Install Additional dependencies
+RUN apk update && apk add --no-cache \
+    build-base shadow vim curl \
+    php7 \
+    php7-fpm \
+    php7-common \
+    php7-pdo \
+    php7-pdo_mysql \
+    php7-mysqli \
+    php7-mcrypt \
+    php7-mbstring \
+    php7-xml \
+    php7-openssl \
+    php7-json \
+    php7-phar \
+    php7-zip \
+    php7-gd \
+    php7-dom \
+    php7-session \
+    php7-zlib
+
+# Add and Enable PHP-PDO Extenstions
+RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-enable pdo_mysql
+
+# Install PHP Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Remove Cache
+RUN rm -rf /var/cache/apk/*
+
+# Set User Id
+RUN usermod -u 1000 www-data
+
+# Add the entrypoint script
+ADD setup-env.sh /usr/local/bin/setup-env.sh
+
+# Make sure that script is executable
+RUN chmod +x /usr/local/bin/setup-env.sh
+
+# Set the work directory
+WORKDIR /usr/share/nginx/html
+
+# Set the entrypoint
+CMD ["/usr/local/bin/setup-env.sh"]
